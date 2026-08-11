@@ -261,3 +261,67 @@ import {isRenderable} from '@astryxdesign/core/utils';
 Ships as a **warning in both tiers** while core migrates its existing call sites; promote to `error` in strict mode once migrated. Provides an ESLint suggestion that rewrites the comparison to `isRenderable(value)` (add the import manually).
 
 See: https://github.com/facebook/astryx/issues/2538
+
+### `@astryx/no-unguarded-ime-keydown`
+
+Flags an `onKeyDown` handler on an **editable surface** that branches on a
+"command" key (Enter/Escape/arrows/Page/Home/End, or a legacy `keyCode`/`which`)
+**without an IME composition guard**.
+
+For CJK (Korean/Japanese/Chinese) input, the browser fires `keydown` with
+`isComposing === true` (or the legacy `keyCode === 229`) **before**
+`compositionend` writes the pending syllable. A handler that reads
+`e.key === 'Enter'` (or `'Escape'`, an arrow…) to accept a suggestion, select an
+option, submit, or close then misfires on the keystroke that was only meant to
+**commit the composition**. Early-return on `isImeKeyEvent(e.nativeEvent)` (from
+`@astryxdesign/core/utils/ime` — it returns
+`event.isComposing === true || event.keyCode === 229`) before handling command
+keys.
+
+**Scope (deliberately conservative — a noisy rule gets disabled):** only flags
+when all of (1) the element is an editable surface — a `<textarea>`, an
+`<input>` whose `type` can host text composition (not checkbox/number/date/…), a
+`contentEditable` element, `role="textbox"`/`"searchbox"`/`"combobox"`, or a
+known Astryx text-input component (`TextInput`, `Typeahead`, `BaseTypeahead`,
+…) — and **not** a `<button>`/`<a>`/`role="button"` (IME can't compose on a
+button, even one with `role="combobox"`); (2) its handler (inline, or a same-file
+identifier resolving to a function/`useCallback`) branches on a command key; and
+(3) a source-text scan of the handler finds **no** `isImeKeyEvent(`,
+`.isComposing`, or `229`.
+
+**Bad:**
+
+```tsx
+<TextInput
+  onKeyDown={e => {
+    if (e.key === 'Enter') onSelect(); // ❌ fires on a composing Enter
+  }}
+/>
+```
+
+**Good:**
+
+```tsx
+import {isImeKeyEvent} from '@astryxdesign/core/utils/ime';
+
+<TextInput
+  onKeyDown={e => {
+    if (isImeKeyEvent(e.nativeEvent)) return; // ✅ let the IME commit first
+    if (e.key === 'Enter') onSelect();
+  }}
+/>;
+```
+
+Ships as a **warning in both tiers** (warn-until-migrated): Selector and
+MultiSelector (and a few other editable surfaces — DateInput, TimeInput,
+DateTimeInput, Typeahead's edit-mode Escape) currently violate it and are fixed
+in a separate stream. Promote to `error` in strict once migrated.
+
+**Known limitations (intentional false-negatives):** guard/command-key detection
+is a lenient text scan (any `isImeKeyEvent(`/`.isComposing`/`229` anywhere in the
+handler counts as guarded; a `e.key === ENTER_KEY` variable comparison is not
+detected). Handler indirection is resolved only one hop within the same file — an
+imported handler is treated as unknown and not flagged. A `role`/`type`/
+`contentEditable` spread via `{...props}` is not seen.
+
+See: https://github.com/facebook/astryx/issues/4892
