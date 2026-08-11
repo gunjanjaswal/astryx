@@ -68,6 +68,7 @@ import {
   formatISOTime,
   isTimeInRange,
   adjustTime,
+  isImeKeyEvent,
   mergeProps,
   mergeRefs,
 } from '../utils';
@@ -726,6 +727,13 @@ export function DateTimeInput({
 
   const handleDateKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // Guard the composing keydown (fires before compositionend): an IME uses
+      // Enter to commit the candidate and Escape to cancel it, so without this
+      // a CJK user committing a syllable with Enter would commit the pending
+      // date instead. See utils/ime.ts.
+      if (isImeKeyEvent(e.nativeEvent)) {
+        return;
+      }
       if (e.key === 'Escape' && popover.isOpen) {
         e.preventDefault();
         popover.hide();
@@ -819,6 +827,13 @@ export function DateTimeInput({
 
   const handleTimeKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
+      // ArrowUp/ArrowDown step the time and preventDefault; an IME candidate
+      // window uses those same arrows to navigate candidates, so guard the
+      // composing keydown (fires before compositionend) to avoid stealing them
+      // mid-composition. See utils/ime.ts.
+      if (isImeKeyEvent(e.nativeEvent)) {
+        return;
+      }
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
 
