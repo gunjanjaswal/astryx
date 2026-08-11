@@ -525,9 +525,10 @@ export function FileInput({
       // double-announce errors).
       if (errors.length === 0) {
         announce(
-          valid.length === 1
-            ? `1 file selected: ${valid[0].name}`
-            : `${valid.length} files selected`,
+          t('@astryx.fileInput.filesSelected', {
+            count: valid.length,
+            name: valid[0].name,
+          }),
         );
       }
 
@@ -547,6 +548,7 @@ export function FileInput({
       changeAction,
       startTransition,
       announce,
+      t,
     ],
   );
 
