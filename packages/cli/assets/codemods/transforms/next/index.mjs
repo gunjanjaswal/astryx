@@ -10,11 +10,19 @@
 import renameDropdownMenuRadioDotTarget, {
   meta as renameDropdownMenuRadioDotTargetMeta,
 } from './rename-dropdown-menu-radio-dot-target.mjs';
+import renameMenuDividerDataTypes, {
+  meta as renameMenuDividerDataTypesMeta,
+} from './rename-menu-divider-data-types.mjs';
 
 export default [
   {
     name: 'rename-dropdown-menu-radio-dot-target',
     transform: renameDropdownMenuRadioDotTarget,
     meta: renameDropdownMenuRadioDotTargetMeta,
+  },
+  {
+    name: 'rename-menu-divider-data-types',
+    transform: renameMenuDividerDataTypes,
+    meta: renameMenuDividerDataTypesMeta,
   },
 ];
