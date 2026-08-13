@@ -28,6 +28,7 @@ import {
   durationVars,
   easeVars,
   typeScaleVars,
+  focusVars,
 } from '../theme/tokens.stylex';
 import {mergeProps} from '../utils';
 import type {BaseProps} from '../BaseProps';
@@ -279,11 +280,11 @@ const styles = stylex.create({
     height: 8,
     outline: {
       default: 'none',
-      ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
+      ':focus-visible': `${focusVars['--focus-outline-width']} ${focusVars['--focus-outline-style']} ${focusVars['--focus-outline-color']}`,
     },
     outlineOffset: {
       default: '0',
-      ':focus-visible': '2px',
+      ':focus-visible': focusVars['--focus-outline-offset'],
     },
     transform: {
       default: 'translate(-50%, -50%)',
